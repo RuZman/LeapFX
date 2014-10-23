@@ -9,7 +9,6 @@ import javafx.application.Application;
 import javafx.scene.Group;
 import javafx.scene.PerspectiveCamera;
 import javafx.scene.Scene;
-import javafx.scene.transform.Rotate;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import de.ruzman.leap.LeapApp;
@@ -32,17 +31,16 @@ public class App extends Application implements PointMotionListener {
 	@Override
 	public void start(Stage primaryStage) throws Exception {
 		group = new Group();
+		
 		hands = new HashMap<>();
 		
-		Scene scene = new Scene(group, 500, 500);
-		
 		PerspectiveCamera camera = new PerspectiveCamera(true);
-		camera.setTranslateY(-500);
+		camera.setTranslateZ(-500);
+		camera.setTranslateY(-200);
 		camera.setFarClip(1000);
 		camera.setFieldOfView(40);
-		camera.setRotationAxis(Rotate.X_AXIS);
-		camera.setRotate(-90);
 		
+		Scene scene = new Scene(group, 500, 500);		
 		scene.setCamera(camera);
 		
 		primaryStage.setScene(scene);
@@ -50,7 +48,7 @@ public class App extends Application implements PointMotionListener {
 		
 		synchronizeWithLeapMotion();
 		LeapApp.getMotionRegistry().addPointMotionListener(this);
-	}
+	}	
 
 	private void synchronizeWithLeapMotion() {
 		Timeline timeline = new Timeline();
@@ -77,7 +75,7 @@ public class App extends Application implements PointMotionListener {
 		
 		hand.update(LeapApp.getController().frame().hand(handId));
 	}
-
+	
 	@Override
 	public void pointDragged(PointEvent event) {
 	}
