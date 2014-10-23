@@ -8,6 +8,7 @@ import javafx.scene.Scene;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Sphere;
+import javafx.scene.transform.Rotate;
 import javafx.stage.Stage;
 
 public class App extends Application {
@@ -22,7 +23,9 @@ public class App extends Application {
 		Scene scene = new Scene(group, 500, 500);
 		
 		PerspectiveCamera camera = new PerspectiveCamera(true);
-		camera.setTranslateZ(-10);
+		camera.setTranslateY(10);
+		camera.setRotationAxis(Rotate.X_AXIS);
+		camera.setRotate(90);
 		scene.setCamera(camera);
 		
 		group.getChildren().add(create3DBall());
