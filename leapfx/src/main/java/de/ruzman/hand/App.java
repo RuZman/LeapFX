@@ -9,9 +9,6 @@ import javafx.application.Application;
 import javafx.scene.Group;
 import javafx.scene.PerspectiveCamera;
 import javafx.scene.Scene;
-import javafx.scene.paint.Color;
-import javafx.scene.paint.PhongMaterial;
-import javafx.scene.shape.Sphere;
 import javafx.scene.transform.Rotate;
 import javafx.stage.Stage;
 import javafx.util.Duration;
@@ -19,10 +16,11 @@ import de.ruzman.leap.LeapApp;
 import de.ruzman.leap.LeapApp.Mode;
 import de.ruzman.leap.event.PointEvent;
 import de.ruzman.leap.event.PointMotionListener;
+import de.ruzman.leap.fx.HandFX3D;
 
 public class App extends Application implements PointMotionListener {	
 	private Group group;
-	private Map<Integer, Sphere> hands;
+	private Map<Integer, HandFX3D> hands;
 	
 	public static void main(String[] args) {
 		LeapApp.init(true);
@@ -39,9 +37,12 @@ public class App extends Application implements PointMotionListener {
 		Scene scene = new Scene(group, 500, 500);
 		
 		PerspectiveCamera camera = new PerspectiveCamera(true);
-		camera.setTranslateY(100);
+		camera.setTranslateY(-500);
+		camera.setFarClip(1000);
+		camera.setFieldOfView(40);
 		camera.setRotationAxis(Rotate.X_AXIS);
-		camera.setRotate(90);
+		camera.setRotate(-90);
+		
 		scene.setCamera(camera);
 		
 		primaryStage.setScene(scene);
@@ -63,33 +64,19 @@ public class App extends Application implements PointMotionListener {
 	@Override
 	public void pointMoved(PointEvent event) {
 		int handId = event.getSource().id();
-		Sphere hand = hands.get(handId);
+		HandFX3D hand = hands.get(handId);
 		
 		if(event.leftViewPort()) {
 			hands.remove(handId);
 			group.getChildren().remove(hand);
 		} else if(hand == null) {
-			hand = createSphere();
+			hand = new HandFX3D(handId);
 			hands.put(handId, hand);
 			group.getChildren().add(hand);
 		}
 		
-		if(hand != null) {
-			hand.setTranslateX(event.getAbsoluteX());
-			hand.setTranslateZ(event.getAbsoluteZ());
-		}
+		hand.update(LeapApp.getController().frame().hand(handId));
 	}
-	
-	private Sphere createSphere() {
-		Sphere sphere = new Sphere(5);
-		
-		PhongMaterial material = new PhongMaterial();
-		material.setSpecularColor(Color.RED);
-		material.setDiffuseColor(Color.DARKRED);
-		sphere.setMaterial(material);
-		
-		return sphere;
-	}		
 
 	@Override
 	public void pointDragged(PointEvent event) {
