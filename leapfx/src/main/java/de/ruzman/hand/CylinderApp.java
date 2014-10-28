@@ -9,6 +9,7 @@ import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Cylinder;
 import javafx.scene.shape.Shape3D;
 import javafx.scene.shape.Sphere;
+import javafx.scene.transform.Rotate;
 import javafx.stage.Stage;
 
 public class CylinderApp extends Application {	
@@ -34,7 +35,7 @@ public class CylinderApp extends Application {
 	}
 	
 	private void demonstrateCylinder(Group group) {
-		Sphere sphere = new Sphere(10);
+		Sphere sphere = new Sphere(5);
 		Cylinder cylinder = new Cylinder(5, 200);
 		
 		addMaterial(sphere);
@@ -44,12 +45,17 @@ public class CylinderApp extends Application {
 		sphere.setTranslateY(20);
 		sphere.setTranslateZ(100);
 
-		cylinder.setTranslateX(30);
-		cylinder.setTranslateY(20);
-		cylinder.setTranslateZ(100);
+		cylinder.setTranslateX(sphere.getTranslateX());
+		cylinder.setTranslateY(sphere.getTranslateY()-cylinder.getHeight()/2);
+		cylinder.setTranslateZ(sphere.getTranslateZ());
 		
+		Rotate rx = new Rotate(0, 0, cylinder.getHeight()/2, 0, Rotate.X_AXIS);
+		Rotate ry = new Rotate(0, 0, cylinder.getHeight()/2, 0, Rotate.Y_AXIS);
+		Rotate rz = new Rotate(50, 0, cylinder.getHeight()/2, 0, Rotate.Z_AXIS);
+		
+		cylinder.getTransforms().addAll(rx, ry, rz);		
 		group.getChildren().addAll(sphere, cylinder);
-	}
+	}	
 
 	private void addMaterial(Shape3D shape3D) {
 		PhongMaterial material = new PhongMaterial();
