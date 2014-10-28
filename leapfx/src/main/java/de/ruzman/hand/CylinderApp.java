@@ -9,7 +9,6 @@ import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Cylinder;
 import javafx.scene.shape.Shape3D;
 import javafx.scene.shape.Sphere;
-import javafx.scene.transform.Rotate;
 import javafx.stage.Stage;
 
 public class CylinderApp extends Application {	
@@ -35,27 +34,34 @@ public class CylinderApp extends Application {
 	}
 	
 	private void demonstrateCylinder(Group group) {
-		Sphere sphere = new Sphere(5);
+		Sphere fromSphere = createSphere(30, 20, 100);
+		Sphere toSphere = createSphere(-20, -10, -10);
 		Cylinder cylinder = new Cylinder(5, 200);
-		
-		addMaterial(sphere);
-		addMaterial(cylinder);
-		
-		sphere.setTranslateX(30);
-		sphere.setTranslateY(20);
-		sphere.setTranslateZ(100);
 
-		cylinder.setTranslateX(sphere.getTranslateX());
-		cylinder.setTranslateY(sphere.getTranslateY()-cylinder.getHeight()/2);
-		cylinder.setTranslateZ(sphere.getTranslateZ());
+		addMaterial(cylinder);
+		connect(cylinder, fromSphere, toSphere);
+
+		group.getChildren().addAll(cylinder, fromSphere, toSphere);
+	}
+	
+	private void connect(Cylinder cylinder, Sphere fromSphere, Sphere toSphere) {
+		cylinder.translateXProperty().bind(fromSphere.translateXProperty());
+		cylinder.translateYProperty().bind(
+				fromSphere.translateYProperty().subtract(
+						cylinder.heightProperty().divide(2)));
+		cylinder.translateZProperty().bind(fromSphere.translateZProperty());
+	}
+	
+	private Sphere createSphere(double x, double y, double z) {
+		Sphere sphere = new Sphere(5);
+		addMaterial(sphere);
 		
-		Rotate rx = new Rotate(0, 0, cylinder.getHeight()/2, 0, Rotate.X_AXIS);
-		Rotate ry = new Rotate(0, 0, cylinder.getHeight()/2, 0, Rotate.Y_AXIS);
-		Rotate rz = new Rotate(50, 0, cylinder.getHeight()/2, 0, Rotate.Z_AXIS);
+		sphere.setTranslateX(x);
+		sphere.setTranslateY(y);
+		sphere.setTranslateZ(z);
 		
-		cylinder.getTransforms().addAll(rx, ry, rz);		
-		group.getChildren().addAll(sphere, cylinder);
-	}	
+		return sphere;
+	}
 
 	private void addMaterial(Shape3D shape3D) {
 		PhongMaterial material = new PhongMaterial();
