@@ -6,6 +6,7 @@ import java.util.Map;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Application;
+import javafx.scene.DepthTest;
 import javafx.scene.Group;
 import javafx.scene.PerspectiveCamera;
 import javafx.scene.Scene;
@@ -20,7 +21,7 @@ import de.ruzman.leap.fx.HandFX3D;
 public class App extends Application implements PointMotionListener {	
 	private Group group;
 	private Map<Integer, HandFX3D> hands;
-	
+
 	public static void main(String[] args) {
 		LeapApp.init(true);
 		LeapApp.setMode(Mode.INTERACTION_BOX);
@@ -31,6 +32,7 @@ public class App extends Application implements PointMotionListener {
 	@Override
 	public void start(Stage primaryStage) throws Exception {
 		group = new Group();
+		group.setDepthTest(DepthTest.ENABLE);
 		
 		hands = new HashMap<>();
 		
@@ -73,7 +75,9 @@ public class App extends Application implements PointMotionListener {
 			group.getChildren().add(hand);
 		}
 		
-		hand.update(LeapApp.getController().frame().hand(handId));
+		if(hand != null) {
+			hand.update(LeapApp.getController().frame().hand(handId));
+		}
 	}
 	
 	@Override
