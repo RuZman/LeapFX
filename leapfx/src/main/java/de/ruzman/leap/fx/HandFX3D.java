@@ -16,6 +16,11 @@ import com.leapmotion.leap.Bone.Type;
 import com.leapmotion.leap.Finger;
 import com.leapmotion.leap.Hand;
 
+/**
+ * The class {@code HandFX3D} contains some {@link Sphere Spheres} and
+ * {@link Cylinder Cylinders} which visualize a 3D hand in JavaFX. Call the
+ * method {@link #update(Hand)} to update the position, direction, etc.
+ */
 public class HandFX3D extends Group {
 	private Sphere palm;
 	private Sphere metacarpal;
@@ -26,7 +31,10 @@ public class HandFX3D extends Group {
 
 	private List<JointFX3D> joints;
 
-	public HandFX3D(int handId) {
+	/**
+	 * Initialize a 3D hand.
+	 */
+	public HandFX3D() {
 		joints = new ArrayList<>();
 
 		palm = createSphere();
@@ -38,13 +46,6 @@ public class HandFX3D extends Group {
 			intermediate[i] = createSphere();
 			proximal[i] = createSphere();
 
-			getChildren().addAll(fingers[i], distal[i], proximal[i],
-					intermediate[i]);
-		}
-
-		getChildren().addAll(palm, metacarpal);
-
-		for (int i = 0; i < fingers.length; i++) {
 			connectSpheres(fingers[i], distal[i]);
 			connectSpheres(distal[i], intermediate[i]);
 			connectSpheres(intermediate[i], proximal[i]);
@@ -56,6 +57,12 @@ public class HandFX3D extends Group {
 		connectSpheres(proximal[0], proximal[1]);
 		connectSpheres(proximal[0], metacarpal);
 		connectSpheres(metacarpal, proximal[4]);
+		
+		getChildren().addAll(palm, metacarpal);
+		getChildren().addAll(fingers);
+		getChildren().addAll(distal);
+		getChildren().addAll(proximal);
+		getChildren().addAll(intermediate);		
 	}
 
 	private Sphere createSphere() {
@@ -75,8 +82,14 @@ public class HandFX3D extends Group {
 		getChildren().add(jointFX3D.getBone());
 	}
 
+	/**
+	 * Update the position, direction, etc. of the 3D hand.
+	 * 
+	 * @param hand
+	 *            Hand, to be displayed.
+	 */
 	public void update(Hand hand) {
-		FXUtil.transform(palm, hand.palmPosition());
+		FXUtil.translate(palm, hand.palmPosition());
 
 		Iterator<Finger> itFinger = hand.fingers().iterator();
 
@@ -84,12 +97,12 @@ public class HandFX3D extends Group {
 		for (int i = 0; i < fingers.length; i++) {
 			finger = itFinger.next();
 
-			FXUtil.transform(fingers[i], finger.tipPosition());
-			FXUtil.transform(distal[i], finger.bone(Type.TYPE_DISTAL).prevJoint());
-			FXUtil.transform(intermediate[i], finger.bone(Type.TYPE_INTERMEDIATE).prevJoint());
-			FXUtil.transform(proximal[i], finger.bone(Type.TYPE_PROXIMAL).prevJoint());
+			FXUtil.translate(fingers[i], finger.tipPosition());
+			FXUtil.translate(distal[i], finger.bone(Type.TYPE_DISTAL).prevJoint());
+			FXUtil.translate(intermediate[i], finger.bone(Type.TYPE_INTERMEDIATE).prevJoint());
+			FXUtil.translate(proximal[i], finger.bone(Type.TYPE_PROXIMAL).prevJoint());
 		}
-		FXUtil.transform(metacarpal, finger.bone(Type.TYPE_METACARPAL)
+		FXUtil.translate(metacarpal, finger.bone(Type.TYPE_METACARPAL)
 				.prevJoint());
 
 		for (JointFX3D joint : joints) {
@@ -128,8 +141,7 @@ public class HandFX3D extends Group {
 			double dy = (float) (fromSphere.getTranslateY() - toSphere.getTranslateY());
 			double dz = (float) (fromSphere.getTranslateZ() - toSphere.getTranslateZ());
 
-			bone.setHeight(Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2)
-					+ Math.pow(dz, 2)));
+			bone.setHeight(Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2) + Math.pow(dz, 2)));
 			bone.setTranslateX(fromSphere.getTranslateX());
 			bone.setTranslateY(fromSphere.getTranslateY() - bone.getHeight() / 2);
 			bone.setTranslateZ(fromSphere.getTranslateZ());

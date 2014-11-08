@@ -70,7 +70,7 @@ public class App extends Application implements PointMotionListener {
 			hands.remove(handId);
 			group.getChildren().remove(hand);
 		} else if(hand == null) {
-			hand = new HandFX3D(handId);
+			hand = new HandFX3D();
 			hands.put(handId, hand);
 			group.getChildren().add(hand);
 		}
