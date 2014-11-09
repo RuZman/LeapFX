@@ -1,72 +1,90 @@
 package de.ruzman.path;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.scene.Group;
 import javafx.scene.Scene;
-import javafx.scene.paint.Color;
-import javafx.scene.shape.ArcTo;
-import javafx.scene.shape.ClosePath;
-import javafx.scene.shape.HLineTo;
-import javafx.scene.shape.LineTo;
-import javafx.scene.shape.MoveTo;
-import javafx.scene.shape.Path;
-import javafx.scene.shape.VLineTo;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
-public class PathApp extends Application {
+import com.leapmotion.leap.Finger;
+import com.leapmotion.leap.Hand;
+import com.leapmotion.leap.Vector;
+
+import de.ruzman.fx.BezierePath;
+import de.ruzman.leap.LeapApp;
+import de.ruzman.leap.LeapApp.Mode;
+import de.ruzman.leap.TrackingBox;
+import de.ruzman.leap.event.PointEvent;
+import de.ruzman.leap.event.PointMotionListener;
+
+public class PathApp extends Application implements PointMotionListener {
+	private Group root;
+
+	private Map<Integer, BezierePath> paths = new HashMap<>();
+	private TrackingBox trackingBox;
+	private Vector position = new Vector();
 
 	public static void main(String[] args) {
+		LeapApp.init(true);
+		LeapApp.setMode(Mode.INTERACTION_BOX);
+		LeapApp.setMaximumHandNumber(1);
+
 		launch(args);
 	}
 
 	@Override
 	public void start(Stage primaryStage) throws Exception {
-		Group root = new Group();
-		addHouse(root);
-		addPacman(root);
+		root = new Group();
 
 		Scene scene = new Scene(root, 764, 221);
 
 		primaryStage.setScene(scene);
 		primaryStage.show();
+
+		synchronizeWithLeapMotion();
+		LeapApp.setDisplayHeight((int) scene.getHeight());
+		LeapApp.setDisplayWidth((int) scene.getWidth());
+		LeapApp.getMotionRegistry().addPointMotionListener(this);
+
+		trackingBox = new TrackingBox();
 	}
 
-	private void addHouse(Group root) {
-		Path path = new Path();
-
-		path.getElements().add(new MoveTo(282, 210));
-		path.getElements().add(new VLineTo(110));
-		path.getElements().add(new HLineTo(382));
-		path.getElements().add(new LineTo(332, 30));
-		path.getElements().add(new LineTo(282, 110));
-		path.getElements().add(new LineTo(382, 210));
-		path.getElements().add(new HLineTo(282));
-		path.getElements().add(new LineTo(382, 110));
-		path.getElements().add(new VLineTo(210));
-
-		root.getChildren().add(path);
+	private void synchronizeWithLeapMotion() {
+		Timeline timeline = new Timeline();
+		timeline.setCycleCount(Timeline.INDEFINITE);
+		timeline.getKeyFrames().add(
+				new KeyFrame(Duration.seconds(1.0 / 60.0), ea -> LeapApp
+						.update()));
+		timeline.play();
 	}
 
-	private void addPacman(Group root) {
-		Path path = new Path();
+	@Override
+	public void pointMoved(PointEvent event) {
+		int handId = event.getSource().id();
+		BezierePath path = paths.get(handId);
 
-		path.getElements().add(new MoveTo(550, 105));
-		path.getElements().add(new LineTo(470, 50));
+		Hand hand = LeapApp.getController().frame().hand(handId);
+		Finger finger = hand.fingers().get(1);
+		trackingBox.calcScreenPosition(finger.tipPosition(), position);
 
-		ArcTo arc = new ArcTo();
-		arc.setRadiusX(100);
-		arc.setRadiusY(100);
-		arc.setX(470);
-		arc.setY(180);
-		arc.setLargeArcFlag(true);
-		arc.setSweepFlag(true);
+		if (path == null) {
+			path = new BezierePath();
+			paths.put(handId, path);
+			root.getChildren().add(path);
+		} else if (event.leftViewPort()) {
+			paths.remove(handId);
+			root.getChildren().remove(path);
+		}
 
-		path.getElements().add(arc);
-		path.getElements().add(new ClosePath());
+		path.add(position.getX(), position.getY());
+	}
 
-		path.setFill(Color.YELLOW);
-		path.setStroke(null);
-
-		root.getChildren().add(path);
+	@Override
+	public void pointDragged(PointEvent event) {
 	}
 }
