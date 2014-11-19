@@ -114,13 +114,13 @@ public class HandFX3D extends Group {
 		private Sphere fromSphere;
 		private Sphere toSphere;
 		private Cylinder bone;
-		private Rotate joint;
+		private Rotate rotation;
 
 		public JointFX3D(Sphere fromSphere, Sphere toSphere) {
 			this.fromSphere = fromSphere;
 			this.toSphere = toSphere;
-			this.joint = new Rotate();
-			this.bone = createBone(joint);
+			this.rotation = new Rotate();
+			this.bone = createBone(rotation);
 		}
 
 		private Cylinder createBone(Rotate joint) {
@@ -146,9 +146,9 @@ public class HandFX3D extends Group {
 			bone.setTranslateY(fromSphere.getTranslateY() - bone.getHeight() / 2);
 			bone.setTranslateZ(fromSphere.getTranslateZ());
 
-			joint.setPivotY(bone.getHeight() / 2);
-			joint.setAxis(new Point3D(dz, 0, -dx));
-			joint.setAngle(180 - new Point3D(dx, -dy, dz).angle(Rotate.Y_AXIS));
+			rotation.setPivotY(bone.getHeight() / 2);
+			rotation.setAxis(new Point3D(dz, 0, -dx));
+			rotation.setAngle(180 - new Point3D(dx, -dy, dz).angle(Rotate.Y_AXIS));
 		}
 
 		public Cylinder getBone() {
