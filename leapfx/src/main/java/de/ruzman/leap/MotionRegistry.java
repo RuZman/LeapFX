@@ -51,7 +51,7 @@ public class MotionRegistry implements LeapListener {
 							case DYNAMIC_ONE_SIDE:
 									Vector zone = new Vector();
 									trackingBox.calcZone(hand.palmPosition(), zone);
-									trackingBox = TrackingBox.buildOneSideTrackingBox(zone.getX() < 0);
+									trackingBox = TrackingBox.buildOneSideTrackingBox(hand.isLeft());
 								break;
 							default:
 								break;
