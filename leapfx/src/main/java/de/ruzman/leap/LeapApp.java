@@ -10,135 +10,257 @@ import com.leapmotion.leap.Controller;
 import de.ruzman.leap.event.LeapEventHandler;
 
 public final class LeapApp {
-	public enum Mode {
-		// TODO: Better solution ...
-		DYNAMIC_ONE_SIDE, INTERACTION_BOX;
-	}
-	private static LeapApp singleton;
-	
-	private MotionRegistry motionRegistry;
+	private static LeapApp instance;
+
 	private AWTDispatcher awtDispatcher;
-	private Controller controller;
-	
+	private MotionRegistry motionRegistry;
+	private TrackingBox trackingBox;
+	private int minimumHandNumber = 1;
+	private int maximumHandNumber = Integer.MAX_VALUE;
 	private int displayWidth;
 	private int displayHeight;
+	private boolean usePolling;
 	
-	private Mode mode;
-	private int maximumHandNumber;
-	private int minimumHandNumber;
+	private Controller controller;
+	
+	private LeapApp(Controller controller) {
+		this.controller = controller;
+	}
+	
+	private void init(TrackingBox trackingBox,
+			int minimumHandNumber,
+			int maximumHandNumber,
+			int displayWidth,
+			int displayHeight,
+			boolean usePolling,
+			boolean activateAWTDispatcher,
+			MotionRegistry motionRegistry) {
 		
-	private LeapApp(boolean activatePolling) {
-		NativeLibrary.loadSystem("native");
-				
-		// TODO: Multiscreen ...
-		GraphicsDevice device = GraphicsEnvironment
-				.getLocalGraphicsEnvironment().getDefaultScreenDevice();
-		DisplayMode dispMode = device.getDisplayMode();
+		this.trackingBox = trackingBox;
+		this.displayWidth = displayWidth;
+		this.displayHeight = displayHeight;
+		setMinimumHandNumber(minimumHandNumber);
+		setMaximumHandNumber(maximumHandNumber);
+		this.usePolling = usePolling;
 		
-		displayWidth = dispMode.getWidth();
-		displayHeight = dispMode.getHeight();
-		
-		controller = new Controller();
-		if(!activatePolling) {
+		if(!usePolling) {
 			controller.addListener(LeapEventHandler.getInstance());
 		}
-
-		mode = Mode.DYNAMIC_ONE_SIDE;
-		maximumHandNumber = Integer.MAX_VALUE;
 		
-		motionRegistry = new MotionRegistry();
+		this.motionRegistry = motionRegistry;
 		LeapEventHandler.addLeapListener(motionRegistry);
-	}
-	
-	public static void init(boolean activePolling) {
-		if(singleton == null) {
-			singleton = new LeapApp(activePolling);
+		
+		if(activateAWTDispatcher) {
+			getAWTMouseListener();
 		}
 	}
 	
-	public static LeapApp getInstance() {
-		return singleton;
+	public static void setTrackingBox(TrackingBox trackingBox) {
+		instance.trackingBox = trackingBox;
 	}
 	
-	public static MotionRegistry getMotionRegistry() {
-		return singleton.motionRegistry;
+	public static TrackingBox getTrackingBox() {
+		return instance.trackingBox;
 	}
 	
-	public static int getDisplayWidth() {
-		return singleton.displayWidth;
+	public static void setMinimumHandNumber(int minimumHandNumber) {
+		validateHandNumber();
+		instance.minimumHandNumber = minimumHandNumber;
+	}
+	
+	public static int getMinimumHandNumber() {
+		return instance.minimumHandNumber;
+	}
+	
+	public static void setMaximumHandNumber(int maximumHandNumber) {
+		validateHandNumber();
+		instance.maximumHandNumber = maximumHandNumber;
+	}
+	
+	public static int getMaximumHandNumber() {
+		return instance.maximumHandNumber;
+	}
+	
+	private static void validateHandNumber() {
+		if(instance.maximumHandNumber < instance.minimumHandNumber) {
+			throw new IllegalArgumentException("MaximumHandNumber must be >= minumumHandNumber");
+		}
+		
+		if(instance.maximumHandNumber < 1) {
+			throw new IllegalArgumentException("MinimumHandNumber must be >= 1");
+		}
+		
+		if(instance.minimumHandNumber < 1) {
+			throw new IllegalArgumentException("MinimumHandNumber must be >= 1");
+		}
 	}
 	
 	public static void setDisplayWidth(int displayWidth) {
-		singleton.displayWidth = displayWidth;
+		instance.displayWidth = displayWidth;
 	}
 	
-	public static int getDisplayHeight() {
-		return singleton.displayHeight;
+	public static int getDisplayWidth() {
+		return instance.displayWidth;
 	}
 	
 	public static void setDisplayHeight(int displayHeight) {
-		singleton.displayHeight = displayHeight;
+		instance.displayHeight = displayHeight;
 	}
 	
-	public void setMotionRegistry(MotionRegistry motionRegistry) {
+	public static int getDisplayHeight() {
+		return instance.displayHeight;
+	}
+	
+	public static void setMotionRegistry(MotionRegistry motionRegistry) {
 		if(motionRegistry != null) {
-			LeapEventHandler.removeLeapListener(this.motionRegistry);
-			this.motionRegistry = motionRegistry;
+			LeapEventHandler.removeLeapListener(instance.motionRegistry);
+			instance.motionRegistry = motionRegistry;
 			LeapEventHandler.addLeapListener(motionRegistry);
 		}
 	}
 	
-	public static WindowAdapter getAndSetupAWTMouseListener() {
-		if(singleton.awtDispatcher == null) {
-			singleton.awtDispatcher = new AWTDispatcher();
-			singleton.motionRegistry.setAWTDispatcher(singleton.awtDispatcher);
-			
-		}
-		return singleton.awtDispatcher;
-	}
-	
-	public static void setMinimumHandNumber(int minimumHandNumer) {
-		singleton.minimumHandNumber = minimumHandNumer;
-	}
-	
-	public static int getMinimumHandNumber() {
-		return singleton.minimumHandNumber;
-	}
-	
-	public static void setMaximumHandNumber(int maximumHandNumer) {
-		singleton.maximumHandNumber = maximumHandNumer;
-	}
-	
-	public static int getMaximumHandNumber() {
-		return singleton.maximumHandNumber;
-	}
-	
-	public static void setMode(Mode mode) {
-		singleton.mode = mode;
-	}
-	
-	public static Mode getMode() {
-		return singleton.mode;
+	public static MotionRegistry getMotionRegistry() {
+		return instance.motionRegistry;
 	}
 	
 	public static Controller getController() {
-		return singleton.controller;
-	}	
+		return instance.controller;
+	}
+	
+	public static void update() {
+		if(instance.usePolling) {
+			LeapEventHandler.updateFrame();
+		}
+	}
+	
+	public static WindowAdapter getAWTMouseListener() {
+		if(instance.awtDispatcher == null) {
+			instance.awtDispatcher = new AWTDispatcher();
+			instance.motionRegistry.setAWTDispatcher(instance.awtDispatcher);
+		}
+		return instance.awtDispatcher;
+	}
 	
 	public static void destroy() {
 		LeapEventHandler.removeAllLeapListener();
-		singleton.controller.delete();
+		instance.controller.delete();
 		try {
-			singleton.finalize();
+			instance.finalize();
 		} catch(Throwable t) {
 			// Do nothing.
 		} finally {
-			singleton = null;
+			instance = null;
 			System.exit(0);
 		}
 	}
 	
-	public static void update() {
-		LeapEventHandler.updateFrame();
+	public static class LeapAppBuilder {
+		private TrackingBox trackingBox;
+		private int minimumHandNumber = 1;
+		private int maximumHandNumber = Integer.MAX_VALUE;
+		private int displayWidth = -1;
+		private int displayHeight = -1;
+		private boolean usePolling = true;
+		private boolean activeAWTDispatcher = false;
+		private MotionRegistry motionRegistry;
+		
+		public LeapAppBuilder() {
+			this(true);
+		}
+		
+		public LeapAppBuilder(boolean shouldLoadNativeLibraries) {
+			this(shouldLoadNativeLibraries, "native");
+		}
+		
+		public LeapAppBuilder(boolean shouldLoadNativeLibraries, String path) {
+			if(shouldLoadNativeLibraries) {
+				NativeLibrary.loadSystem(path);
+			}
+			
+			instance = new LeapApp(new Controller());
+			trackingBox = new TrackingBox();
+			motionRegistry = new MotionRegistry();
+		}
+		
+		public LeapApp createLeapApp() {
+			return createLeapApp(true);
+		}
+		
+		public LeapApp createLeapApp(boolean shouldOverwiteInstance) {
+			if(instance != null && !shouldOverwiteInstance) {
+				throw new IllegalArgumentException("The instance of LeapApp is already initialized.");
+			}
+
+			initDisplaySize();
+			instance.init(trackingBox,
+					minimumHandNumber,
+					maximumHandNumber,
+					displayWidth,
+					displayHeight,
+					usePolling,
+					activeAWTDispatcher,
+					motionRegistry);
+			
+			return instance;
+		}
+		
+		private void initDisplaySize() {
+			GraphicsDevice device = GraphicsEnvironment
+					.getLocalGraphicsEnvironment().getDefaultScreenDevice();
+			DisplayMode dispMode = device.getDisplayMode();
+			
+			if(displayWidth < 0) {
+				displayWidth = dispMode.getWidth();
+			}
+			if(displayHeight < 0) {
+				displayHeight = dispMode.getHeight();
+			}
+		}
+		
+		public LeapAppBuilder trackingBox(TrackingBox trackingBox) {
+			this.trackingBox = trackingBox;
+			return this;
+		}
+		
+		public LeapAppBuilder minimumHandNumber(int minimumHandNumber) {
+			if(minimumHandNumber < 1) {
+				throw new IllegalArgumentException("MinimumHandNumber must be >= 1");
+			}
+			this.minimumHandNumber = minimumHandNumber;
+			return this;
+		}
+		
+		public LeapAppBuilder maximumHandNumber(int maximumHandNumber) {
+			if(maximumHandNumber < 1) {
+				throw new IllegalArgumentException("MinimumHandNumber must be >= 1");
+			}
+			this.maximumHandNumber = maximumHandNumber;
+			return this;
+		}
+		
+		public LeapAppBuilder displayWidth(int displayWidth) {
+			this.displayWidth = displayWidth;
+			return this;
+		}
+		
+		public LeapAppBuilder displayHeight(int displayHeight) {
+			this.displayHeight = displayHeight;
+			return this;
+		}
+		
+		public LeapAppBuilder usePolling(boolean usePolling) {
+			this.usePolling = usePolling;
+			return this;
+		}
+		
+		public LeapAppBuilder activeAWTDispatcher() {
+			this.activeAWTDispatcher = true;
+			return this;
+		}
+		
+		public LeapAppBuilder motionRegistry(MotionRegistry motionRegistry) {
+			this.motionRegistry = motionRegistry;
+			return this;
+		}
 	}
 }

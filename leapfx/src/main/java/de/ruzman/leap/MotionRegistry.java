@@ -8,7 +8,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import com.leapmotion.leap.Frame;
 import com.leapmotion.leap.Hand;
-import com.leapmotion.leap.Vector;
 
 import de.ruzman.leap.event.LeapEvent;
 import de.ruzman.leap.event.LeapListener;
@@ -29,7 +28,8 @@ public class MotionRegistry implements LeapListener {
 		pointMotionListeners = new CopyOnWriteArrayList<>();
 	}
 	
-	public void update(Frame frame) {		
+	public void update(Frame frame) {
+		
 		if(frame.hands().count() >= LeapApp.getMinimumHandNumber()) {
 			for(ExtendedHand extendedHand: hands.values()) {
 				if(frame.hand(extendedHand.id()).id() == -1) {
@@ -43,32 +43,23 @@ public class MotionRegistry implements LeapListener {
 	
 			for(Hand hand: frame.hands()) {
 				extendedHand = hands.get(hand.id());
-					
-					if(extendedHand == null && hands.size() < LeapApp.getMaximumHandNumber()) {
-						TrackingBox trackingBox = new TrackingBox();
-						
-						switch(LeapApp.getMode()) {
-							case DYNAMIC_ONE_SIDE:
-									Vector zone = new Vector();
-									trackingBox.calcZone(hand.palmPosition(), zone);
-									trackingBox = TrackingBox.buildOneSideTrackingBox(hand.isLeft());
-								break;
-							default:
-								break;
-						}
-						
-						extendedHand = new ExtendedHand(hand.id(), trackingBox);
-						extendedHand.setClickZone(EnumSet.of(Zone.BACK));
-						
-						for(PointListener pointListener: pointListeners) {
-							extendedHand.addPointListener(pointListener);
-						}
-						for(PointMotionListener pointMotionListener: pointMotionListeners) {
-							extendedHand.addPointMotionListener(pointMotionListener);
-						}
-						
-						hands.put(hand.id(), extendedHand);
+
+				if (extendedHand == null
+						&& hands.size() < LeapApp.getMaximumHandNumber()) {
+					extendedHand = new ExtendedHand(hand.id(),
+							LeapApp.getTrackingBox());
+					extendedHand.setClickZone(EnumSet.of(Zone.BACK));
+
+					for (PointListener pointListener : pointListeners) {
+						extendedHand.addPointListener(pointListener);
 					}
+					for (PointMotionListener pointMotionListener : pointMotionListeners) {
+						extendedHand
+								.addPointMotionListener(pointMotionListener);
+					}
+
+					hands.put(hand.id(), extendedHand);
+				}
 	
 				
 				if(extendedHand != null) {

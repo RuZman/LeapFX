@@ -13,7 +13,7 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import de.ruzman.leap.LeapApp;
-import de.ruzman.leap.LeapApp.Mode;
+import de.ruzman.leap.LeapApp.LeapAppBuilder;
 import de.ruzman.leap.event.PointEvent;
 import de.ruzman.leap.event.PointMotionListener;
 import de.ruzman.leap.fx.HandFX3D;
@@ -23,8 +23,7 @@ public class App extends Application implements PointMotionListener {
 	private Map<Integer, HandFX3D> hands;
 
 	public static void main(String[] args) {
-		LeapApp.init(true);
-		LeapApp.setMode(Mode.INTERACTION_BOX);
+		new LeapAppBuilder().createLeapApp();
 		
 		launch(args);
 	}

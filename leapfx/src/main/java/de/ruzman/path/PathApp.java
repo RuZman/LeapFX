@@ -17,7 +17,7 @@ import com.leapmotion.leap.Vector;
 
 import de.ruzman.fx.BezierePath;
 import de.ruzman.leap.LeapApp;
-import de.ruzman.leap.LeapApp.Mode;
+import de.ruzman.leap.LeapApp.LeapAppBuilder;
 import de.ruzman.leap.TrackingBox;
 import de.ruzman.leap.event.PointEvent;
 import de.ruzman.leap.event.PointMotionListener;
@@ -30,10 +30,12 @@ public class PathApp extends Application implements PointMotionListener {
 	private Vector position = new Vector();
 
 	public static void main(String[] args) {
-		LeapApp.init(true);
-		LeapApp.setMode(Mode.INTERACTION_BOX);
-		LeapApp.setMaximumHandNumber(1);
-
+		new LeapAppBuilder()
+			.displayWidth(764)
+			.displayHeight(221)
+			.maximumHandNumber(1)
+			.createLeapApp();
+		
 		launch(args);
 	}
 
@@ -41,14 +43,13 @@ public class PathApp extends Application implements PointMotionListener {
 	public void start(Stage primaryStage) throws Exception {
 		root = new Group();
 
-		Scene scene = new Scene(root, 764, 221);
+		Scene scene = new Scene(root, LeapApp.getDisplayWidth(), 
+				LeapApp.getDisplayHeight());
 
 		primaryStage.setScene(scene);
 		primaryStage.show();
 
 		synchronizeWithLeapMotion();
-		LeapApp.setDisplayHeight((int) scene.getHeight());
-		LeapApp.setDisplayWidth((int) scene.getWidth());
 		LeapApp.getMotionRegistry().addPointMotionListener(this);
 
 		trackingBox = new TrackingBox();
