@@ -59,13 +59,11 @@ public final class LeapEventHandler extends Listener {
 	
 	@Override
 	public void onFrame(Controller controller) {
-		if(controller.frame().hands().count() >= LeapApp.getMinimumHandNumber()) {	
 			leapEvent.setFrame(controller.frame());
 			
 			for(LeapListener leapListener: leapListeners) {
 				leapListener.update(leapEvent);
 			}
-		}
 	}
 	
 	private void fireStatusChanged() {

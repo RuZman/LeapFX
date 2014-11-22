@@ -29,51 +29,69 @@ public class MotionRegistry implements LeapListener {
 		pointMotionListeners = new CopyOnWriteArrayList<>();
 	}
 	
-	public void update(Frame frame) {
-		for(ExtendedHand extendedHand: hands.values()) {
-			if(frame.hand(extendedHand.id()).id() == -1) {
+	public void update(Frame frame) {		
+		if(frame.hands().count() >= LeapApp.getMinimumHandNumber()) {
+			for(ExtendedHand extendedHand: hands.values()) {
+				if(frame.hand(extendedHand.id()).id() == -1) {
+					extendedHand.destroy();
+					hands.remove(extendedHand.id());
+				}
+			}
+			
+			ExtendedHand extendedHand;
+			int handCount = 0;
+	
+			for(Hand hand: frame.hands()) {
+				extendedHand = hands.get(hand.id());
+					
+					if(extendedHand == null && hands.size() < LeapApp.getMaximumHandNumber()) {
+						TrackingBox trackingBox = new TrackingBox();
+						
+						switch(LeapApp.getMode()) {
+							case DYNAMIC_ONE_SIDE:
+									Vector zone = new Vector();
+									trackingBox.calcZone(hand.palmPosition(), zone);
+									trackingBox = TrackingBox.buildOneSideTrackingBox(zone.getX() < 0);
+								break;
+							default:
+								break;
+						}
+						
+						extendedHand = new ExtendedHand(hand.id(), trackingBox);
+						extendedHand.setClickZone(EnumSet.of(Zone.BACK));
+						
+						for(PointListener pointListener: pointListeners) {
+							extendedHand.addPointListener(pointListener);
+						}
+						for(PointMotionListener pointMotionListener: pointMotionListeners) {
+							extendedHand.addPointMotionListener(pointMotionListener);
+						}
+						
+						hands.put(hand.id(), extendedHand);
+					}
+	
+				
+				if(extendedHand != null) {
+					if(handCount++ < LeapApp.getMaximumHandNumber()) {
+						extendedHand.update(frame, frame.hand(extendedHand.id()).palmPosition(),
+							frame.hand(extendedHand.id()).stabilizedPalmPosition());
+					}
+				}
+			}
+		} else {
+			for(ExtendedHand extendedHand: hands.values()) {
 				extendedHand.destroy();
 				hands.remove(extendedHand.id());
 			}
 		}
 		
-		ExtendedHand extendedHand;
-		int handCount = 0;
-		
 		for(Hand hand: frame.hands()) {
-			extendedHand = hands.get(hand.id());
-			
-			if(extendedHand == null && hands.size() < LeapApp.getMaximumHandNumber()) {
-				TrackingBox trackingBox = new TrackingBox();
-				
-				switch(LeapApp.getMode()) {
-					case DYNAMIC_ONE_SIDE:
-							Vector zone = new Vector();
-							trackingBox.calcZone(hand.palmPosition(), zone);
-							trackingBox = TrackingBox.buildOneSideTrackingBox(zone.getX() < 0);
-						break;
-					default:
-						break;
-				}
-				
-				extendedHand = new ExtendedHand(hand.id(), trackingBox);
-				extendedHand.setClickZone(EnumSet.of(Zone.BACK));
-				
-				for(PointListener pointListener: pointListeners) {
-					extendedHand.addPointListener(pointListener);
-				}
-				for(PointMotionListener pointMotionListener: pointMotionListeners) {
-					extendedHand.addPointMotionListener(pointMotionListener);
-				}
-				
-				hands.put(hand.id(), extendedHand);
-			}
-
-			if(extendedHand != null && handCount++ < LeapApp.getMaximumHandNumber()) {
-				extendedHand.update(frame, frame.hand(extendedHand.id()).palmPosition(),
-						frame.hand(extendedHand.id()).stabilizedPalmPosition());
+			ExtendedHand extendedHand = hands.get(hand.id());
+			if(extendedHand != null) {
+				extendedHand.updateEvents();
 			}
 		}
+
 	}
 	
 	public void clear() {
@@ -115,16 +133,6 @@ public class MotionRegistry implements LeapListener {
 	@Override
 	public void update(LeapEvent event) {
 		update(event.getFrame());
-		
-		ExtendedHand extendedHand;
-		for(Hand hand: event.getFrame().hands()) {
-			
-			extendedHand = hands.get(hand.id());
-			
-			if(extendedHand != null) {
-				extendedHand.updateEvents();
-			}
-		}
 	}
 
 	@Override
