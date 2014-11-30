@@ -17,13 +17,12 @@ import de.ruzman.leap.LeapApp.LeapAppBuilder;
 import de.ruzman.leap.event.PointEvent;
 import de.ruzman.leap.event.PointMotionListener;
 import de.ruzman.leap.fx.HandFX3D;
-
 public class App extends Application implements PointMotionListener {	
 	private Group group;
 	private Map<Integer, HandFX3D> hands;
 
 	public static void main(String[] args) {
-		new LeapAppBuilder().createLeapApp();
+		new LeapAppBuilder().initLeapApp();
 		
 		launch(args);
 	}
@@ -48,7 +47,7 @@ public class App extends Application implements PointMotionListener {
 		primaryStage.show();
 		
 		synchronizeWithLeapMotion();
-		LeapApp.getMotionRegistry().addPointMotionListener(this);
+		LeapApp.getMotionRegistry().addListener(this);
 	}	
 
 	private void synchronizeWithLeapMotion() {
@@ -61,25 +60,23 @@ public class App extends Application implements PointMotionListener {
 	}
 	
 	@Override
-	public void pointMoved(PointEvent event) {
-		int handId = event.getSource().id();
-		HandFX3D hand = hands.get(handId);
-		
-		if(event.leftViewPort()) {
-			hands.remove(handId);
-			group.getChildren().remove(hand);
-		} else if(hand == null) {
-			hand = new HandFX3D();
-			hands.put(handId, hand);
-			group.getChildren().add(hand);
-		}
-		
-		if(hand != null) {
-			hand.update(LeapApp.getController().frame().hand(handId));
-		}
+	public void enteredViewoport(PointEvent event) {
+		HandFX3D hand = new HandFX3D();
+		hands.put(event.getSource().id(), hand);
+		group.getChildren().add(hand);
 	}
 	
 	@Override
-	public void pointDragged(PointEvent event) {
+	public void moved(PointEvent event) {
+		int handId = event.getSource().id();
+		HandFX3D hand = hands.get(handId);
+		hand.update(LeapApp.getController().frame().hand(handId));
+	}
+
+	@Override
+	public void leftViewport(PointEvent event) {
+		int handId = event.getSource().id();
+		hands.remove(handId);
+		group.getChildren().remove(hands.get(handId));
 	}
 }

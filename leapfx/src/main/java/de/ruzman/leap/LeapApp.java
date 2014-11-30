@@ -48,10 +48,12 @@ public final class LeapApp {
 		setMaximumHandNumber(maximumHandNumber);
 		this.usePolling = usePolling;
 
+		// FIXME: Beim doppelten Aufruf ist das nicht mehr korrekt.
 		if (!usePolling) {
 			controller.addListener(LeapEventHandler.getInstance());
 		}
 
+		// FIXME: Beim doppelten Aufruf ist das nicht mehr korrekt.
 		this.motionRegistry = motionRegistry;
 		LeapEventHandler.addLeapListener(motionRegistry);
 
@@ -142,7 +144,7 @@ public final class LeapApp {
 	public static WindowAdapter getAWTMouseListener() {
 		if (instance.awtDispatcher == null) {
 			instance.awtDispatcher = new AWTDispatcher();
-			instance.motionRegistry.setAWTDispatcher(instance.awtDispatcher);
+			instance.motionRegistry.addListener(instance.awtDispatcher);
 		}
 		return instance.awtDispatcher;
 	}
@@ -174,7 +176,7 @@ public final class LeapApp {
 	 * <li>motionRegistry: default
 	 * </ul>
 	 * <p>
-	 * Short version: <code>new LeapAppBuilder().createLeapApp();</code>
+	 * Short version: <code>new LeapAppBuilder().initLeapApp();</code>
 	 * <p>
 	 * Same as:
 	 * 
@@ -187,7 +189,9 @@ public final class LeapApp {
 	 * 	.displayHeight(dispMode.getHeight())
 	 * 	.usePolling(true)
 	 * 	// .activeAWTDispatcher()
-	 * 	.motionRegistry(new MotionRegistry());</code>
+	 * 	.motionRegistry(new MotionRegistry());
+	 * 	.initLeapApp();
+	 * </code>
 	 * </pre>
 	 */
 	public static class LeapAppBuilder {
@@ -234,35 +238,19 @@ public final class LeapApp {
 				NativeLibrary.loadSystem(path);
 			}
 
-			instance = new LeapApp(new Controller());
+			if(instance == null) {
+				instance = new LeapApp(new Controller());
+			}
 			trackingBox = new TrackingBox();
 			motionRegistry = new MotionRegistry();
 		}
 
 		/**
-		 * See: {@link LeapAppBuilder#createLeapApp(boolean)
-		 * createLeapApp(true)}.
-		 * 
-		 * @return LeapApp
-		 */
-		public LeapApp createLeapApp() {
-			return createLeapApp(true);
-		}
-
-		/**
 		 * Initializes this Leap Motion framework with the given configuration.
 		 * 
-		 * @param shouldOverwiteInstance
-		 *            Whether the old instance of {@link LeapApp} can be
-		 *            overwritten.
 		 * @return LeapApp
 		 */
-		public LeapApp createLeapApp(boolean shouldOverwiteInstance) {
-			if (instance != null && !shouldOverwiteInstance) {
-				throw new IllegalArgumentException(
-						"The instance of LeapApp is already initialized.");
-			}
-
+		public LeapApp initLeapApp() {
 			initDisplaySize();
 			instance.init(trackingBox,
 					minimumHandNumber,

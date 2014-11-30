@@ -7,10 +7,12 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import com.leapmotion.leap.Frame;
 import com.leapmotion.leap.Vector;
 
+import de.ruzman.leap.event.IListener;
+import de.ruzman.leap.event.PointDraggListener;
 import de.ruzman.leap.event.PointEvent;
 import de.ruzman.leap.event.PointEvent.Zone;
-import de.ruzman.leap.event.PointListener;
 import de.ruzman.leap.event.PointMotionListener;
+import de.ruzman.leap.event.PointZoneListener;
 
 public abstract class AbstractPoint {
 	private int id;
@@ -22,15 +24,14 @@ public abstract class AbstractPoint {
 	private float minYPos;
 
 	protected TrackingBox trackingBox;
-
+	private List<IListener> listeners;
+	
 	/** PointMotion Listener */
-	private List<PointMotionListener> pointMotionListeners;
 	private EnumSet<Zone> clickZone;
 	private Vector point;
 	private Vector position;
 
 	/** Point Listener */
-	private List<PointListener> pointListeners;
 	private PointEvent pointEvent;
 	private Vector zone;
 	private EnumSet<Zone> zones;
@@ -46,11 +47,11 @@ public abstract class AbstractPoint {
 		this.trackingBox = trackingBox;
 		isActive = true;
 
-		pointMotionListeners = new CopyOnWriteArrayList<>();
+		listeners = new CopyOnWriteArrayList<>(); 
+		
 		clickZone = EnumSet.noneOf(Zone.class);
 		position = new Vector();
 
-		pointListeners = new CopyOnWriteArrayList<>();
 		zone = new Vector();
 		zones = EnumSet.of(Zone.UNKOWN);
 		prevZones = EnumSet.of(Zone.UNKOWN);
@@ -85,50 +86,46 @@ public abstract class AbstractPoint {
 		isActive = false;
 		updateEvents();
 	}
-
-	public void addPointListener(PointListener pointListener) {
-		pointListeners.add(pointListener);
-	}
-
-	public void removePointListener(PointListener pointListener) {
-		pointListeners.remove(pointListener);
+	
+	public void addListener(IListener listener) {
+		listeners.add(listener);
 	}
 	
-	public void addPointMotionListener(PointMotionListener pointMotionListener) {
-		pointMotionListeners.add(pointMotionListener);
-	}
-
-	public void removePointMotionListener(
-			PointMotionListener pointMotionListener) {
-		pointMotionListeners.remove(pointMotionListener);
+	public void removeListener(IListener listener) {
+		listeners.remove(listener);
 	}
 
 	protected void updateEvents() {
 		pointEvent = new PointEvent(this, zones, prevZones,
 				clickZone);
-		fireUpdateZone();
-		fireUpdatePosition();
-		fireUpdateDragg();
-	}
-
-	public void fireUpdatePosition() {
-		for (PointMotionListener pointMotionListener : pointMotionListeners) {
-			pointMotionListener.pointMoved(pointEvent);
-		}
-	}
-
-	public void fireUpdateDragg() {
-		if (zones.containsAll(clickZone)) {
-			for (PointMotionListener pointMotionListener : pointMotionListeners) {
-				pointMotionListener.pointDragged(pointEvent);
-			}
-		}
+		fireUpdate();
 	}
 	
-	public void fireUpdateZone() {
-		if (updateZone()) {
-			for (PointListener pointListener : pointListeners) {
-				pointListener.zoneChanged(pointEvent);
+	protected void fireUpdate() {
+		boolean isZoneUpdated = updateZone();
+		boolean isDraggDetected = zones.containsAll(clickZone);
+		
+		for (IListener listener : listeners) {
+			if(listener instanceof PointMotionListener) {
+				PointMotionListener pointMotionListener = (PointMotionListener) listener;
+				
+				if(pointEvent.enteredViewPort()) {
+					pointMotionListener.enteredViewoport(pointEvent);
+					pointMotionListener.moved(pointEvent);
+				} else if(pointEvent.leftViewPort()) {
+					pointMotionListener.moved(pointEvent);
+					pointMotionListener.leftViewport(pointEvent);
+				} else {
+					pointMotionListener.moved(pointEvent);
+				}
+			}
+			if(isZoneUpdated && listener instanceof PointZoneListener) {
+				PointZoneListener pointZoneListener = (PointZoneListener) listener;
+				pointZoneListener.zoneChanged(pointEvent);
+			}
+			if(isDraggDetected && listener instanceof PointDraggListener) {
+				PointDraggListener pointDraggListener = (PointDraggListener) listener;
+				pointDraggListener.pointDragged(pointEvent);
 			}
 		}
 	}
@@ -143,9 +140,10 @@ public abstract class AbstractPoint {
 					getZone(zone.getZ(), Zone.BACK, Zone.FRONT));
 		}
 
+		prevZones.clear();
+		prevZones.addAll(zones);
+		
 		if (!bufferedZone.equals(zones)) {
-			prevZones.clear();
-			prevZones.addAll(zones);
 			zones.clear();
 			zones.addAll(bufferedZone);
 

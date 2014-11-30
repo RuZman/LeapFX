@@ -11,14 +11,11 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
-import com.leapmotion.leap.Finger;
-import com.leapmotion.leap.Hand;
 import com.leapmotion.leap.Vector;
 
 import de.ruzman.fx.BezierePath;
 import de.ruzman.leap.LeapApp;
 import de.ruzman.leap.LeapApp.LeapAppBuilder;
-import de.ruzman.leap.TrackingBox;
 import de.ruzman.leap.event.PointEvent;
 import de.ruzman.leap.event.PointMotionListener;
 
@@ -26,7 +23,6 @@ public class PathApp extends Application implements PointMotionListener {
 	private Group root;
 
 	private Map<Integer, BezierePath> paths = new HashMap<>();
-	private TrackingBox trackingBox;
 	private Vector position = new Vector();
 
 	public static void main(String[] args) {
@@ -34,7 +30,7 @@ public class PathApp extends Application implements PointMotionListener {
 			.displayWidth(764)
 			.displayHeight(221)
 			.maximumHandNumber(1)
-			.createLeapApp();
+			.initLeapApp();
 		
 		launch(args);
 	}
@@ -50,9 +46,7 @@ public class PathApp extends Application implements PointMotionListener {
 		primaryStage.show();
 
 		synchronizeWithLeapMotion();
-		LeapApp.getMotionRegistry().addPointMotionListener(this);
-
-		trackingBox = new TrackingBox();
+		LeapApp.getMotionRegistry().addListener(this);
 	}
 
 	private void synchronizeWithLeapMotion() {
@@ -65,27 +59,22 @@ public class PathApp extends Application implements PointMotionListener {
 	}
 
 	@Override
-	public void pointMoved(PointEvent event) {
-		int handId = event.getSource().id();
-		BezierePath path = paths.get(handId);
+	public void enteredViewoport(PointEvent event) {
+		BezierePath path = new BezierePath();
+		paths.put(event.getSource().id(), path);
+		root.getChildren().add(path);
+	}
 
-		Hand hand = LeapApp.getController().frame().hand(handId);
-		Finger finger = hand.fingers().get(1);
-		trackingBox.calcScreenPosition(finger.tipPosition(), position);
-
-		if (path == null) {
-			path = new BezierePath();
-			paths.put(handId, path);
-			root.getChildren().add(path);
-		} else if (event.leftViewPort()) {
-			paths.remove(handId);
-			root.getChildren().remove(path);
-		}
-
+	@Override
+	public void moved(PointEvent event) {
+		BezierePath path = paths.get(event.getSource().id());
 		path.add(position.getX(), position.getY());
 	}
 
 	@Override
-	public void pointDragged(PointEvent event) {
+	public void leftViewport(PointEvent event) {
+		int handId = event.getSource().id();
+		paths.remove(handId);
+		root.getChildren().remove(paths.get(handId));
 	}
 }

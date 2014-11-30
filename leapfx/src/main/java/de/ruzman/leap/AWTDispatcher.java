@@ -6,14 +6,15 @@ import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
+import de.ruzman.leap.event.PointDraggListener;
 import de.ruzman.leap.event.PointEvent;
 import de.ruzman.leap.event.PointEvent.Zone;
-import de.ruzman.leap.event.PointListener;
 import de.ruzman.leap.event.PointMotionListener;
+import de.ruzman.leap.event.PointZoneListener;
 
 //TODO: Use Robot instead?
-public class AWTDispatcher extends WindowAdapter implements PointListener,
-		PointMotionListener {
+public class AWTDispatcher extends WindowAdapter implements PointZoneListener,
+		PointMotionListener, PointDraggListener {
 	private Window window;
 	
 	private void dispatchMouseEvent(PointEvent event, int id) {
@@ -34,9 +35,15 @@ public class AWTDispatcher extends WindowAdapter implements PointListener,
 	}
 
 	@Override
-	public void pointMoved(PointEvent event) {
+	public void enteredViewoport(PointEvent event) {}
+	
+	@Override
+	public void moved(PointEvent event) {
 		dispatchMouseEvent(event, MouseEvent.MOUSE_MOVED);
 	}
+	
+	@Override
+	public void leftViewport(PointEvent event) {}
 
 	@Override
 	public void pointDragged(PointEvent event) {

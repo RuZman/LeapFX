@@ -9,23 +9,21 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import com.leapmotion.leap.Frame;
 import com.leapmotion.leap.Hand;
 
+import de.ruzman.leap.event.IListener;
 import de.ruzman.leap.event.LeapEvent;
 import de.ruzman.leap.event.LeapListener;
+import de.ruzman.leap.event.PointDraggListener;
 import de.ruzman.leap.event.PointEvent.Zone;
-import de.ruzman.leap.event.PointListener;
+import de.ruzman.leap.event.PointZoneListener;
 import de.ruzman.leap.event.PointMotionListener;
 
 public class MotionRegistry implements LeapListener {	
 	protected ConcurrentMap<Integer, ExtendedHand> hands;
-	protected List<PointListener> pointListeners;
-	protected List<PointMotionListener> pointMotionListeners;
-	
-	private AWTDispatcher awtDispatcher;
+	protected List<IListener> listeners;
 
 	public MotionRegistry() {
 		hands = new ConcurrentHashMap<>(10);
-		pointListeners = new CopyOnWriteArrayList<>();
-		pointMotionListeners = new CopyOnWriteArrayList<>();
+		listeners = new CopyOnWriteArrayList<>();
 	}
 	
 	public void update(Frame frame) {
@@ -50,12 +48,8 @@ public class MotionRegistry implements LeapListener {
 							LeapApp.getTrackingBox());
 					extendedHand.setClickZone(EnumSet.of(Zone.BACK));
 
-					for (PointListener pointListener : pointListeners) {
-						extendedHand.addPointListener(pointListener);
-					}
-					for (PointMotionListener pointMotionListener : pointMotionListeners) {
-						extendedHand
-								.addPointMotionListener(pointMotionListener);
+					for (IListener listener : listeners) {
+						extendedHand.addListener(listener);
 					}
 
 					hands.put(hand.id(), extendedHand);
@@ -89,35 +83,29 @@ public class MotionRegistry implements LeapListener {
 		hands.clear();
 	}
 	
-	public void addPointListener(PointListener pointListener) {
-		pointListeners.add(pointListener);
-		
-		for(AbstractPoint abstractPoint: hands.values()) {
-			abstractPoint.addPointListener(pointListener);
-		}		
-	}
-	
-	public void addPointMotionListener(PointMotionListener pointMotionListener) {
-		pointMotionListeners.add(pointMotionListener);
+	public void addListener(IListener listener) {
+		if(listener instanceof PointZoneListener
+			|| listener instanceof PointMotionListener
+			|| listener instanceof PointDraggListener) {
 
-		for(AbstractPoint abstractPoint: hands.values()) {
-			abstractPoint.addPointMotionListener(pointMotionListener);
+			listeners.add(listener);
+			
+			for(AbstractPoint abstractPoint: hands.values()) {
+				abstractPoint.addListener(listener);
+			}
 		}
 	}
 	
-	public void removePointListener(PointListener pointListener) {
-		pointListeners.add(pointListener);
-		
-		for(AbstractPoint abstractPoint: hands.values()) {
-			abstractPoint.removePointListener(pointListener);
-		}		
-	}
-	
-	public void removePointMotionListener(PointMotionListener pointMotionListener) {
-		pointMotionListeners.remove(pointMotionListener);
-		
-		for(AbstractPoint abstractPoint: hands.values()) {
-			abstractPoint.removePointMotionListener(pointMotionListener);
+	public void removePointListener(IListener listener) {
+		if(listener instanceof PointZoneListener
+				|| listener instanceof PointMotionListener
+				|| listener instanceof PointDraggListener) {
+			
+			listeners.remove(listener);
+			
+			for(AbstractPoint abstractPoint: hands.values()) {
+				abstractPoint.removeListener(listener);
+			}
 		}
 	}
 	
@@ -131,17 +119,8 @@ public class MotionRegistry implements LeapListener {
 		clear();
 	}
 
-	protected void setAWTDispatcher(AWTDispatcher awtDispatcher) {
-		if(this.awtDispatcher == null) {
-			this.awtDispatcher = awtDispatcher;
-			addPointListener(awtDispatcher);
-			addPointMotionListener(awtDispatcher);
-		}
-	}
-
 	public synchronized void removeAllListener() {		
-		pointListeners.clear();
-		pointMotionListeners.clear();
+		listeners.clear();
 		
 		hands.clear();
 	}
