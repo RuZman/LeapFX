@@ -1,4 +1,4 @@
-package de.ruzman.path;
+package de.ruzman.demo;
 
 import java.util.HashMap;
 import java.util.Map;

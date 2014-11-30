@@ -1,4 +1,4 @@
-package de.ruzman.hand;
+package de.ruzman.demo;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -17,7 +17,7 @@ import de.ruzman.leap.LeapApp.LeapAppBuilder;
 import de.ruzman.leap.event.PointEvent;
 import de.ruzman.leap.event.PointMotionListener;
 import de.ruzman.leap.fx.HandFX3D;
-public class App extends Application implements PointMotionListener {	
+public class HandTrackingApp extends Application implements PointMotionListener {	
 	private Group group;
 	private Map<Integer, HandFX3D> hands;
 
